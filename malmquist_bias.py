@@ -11,15 +11,6 @@ def distance_modulus(distance_in_pc):
     return 5*log(distance_in_pc) - 5
 
 
-def gauss_mag(mean, sigma):
-    return gauss(mean, sigma)
-
-
-def mag_v(N1):
-    M_VSol = 24/5
-    return M_VSol + 1/5*(N1 - 7/2)
-
-
 def mean_distance(dist_range):
     return dist_range.start + (dist_range.stop - dist_range.start)/2
 
@@ -77,7 +68,7 @@ if __name__ == '__main__':
         sky[region]['d'] = mean_distance(sky[region]['range'])
         sky[region]['mu'] = distance_modulus(sky[region]['d'])
         sky[region]['M_V'] = [
-            gauss_mag(M_V_solar, sigma) for x in range(sky[region]['n'])]
+            gauss(M_V_solar, sigma) for x in range(sky[region]['n'])]
         sky[region]['sample'] = [
             x for x in sky[region]['M_V'] if x < 10 - sky[region]['mu']]
     M_V_all = [mag for region in sky for mag in sky[region]['M_V']]
