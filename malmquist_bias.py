@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 
+
 from math import log as ln
 from pprint import pprint
-from random import randrange
+from random import gauss, randrange
 from getpass import getpass
 
 
 def distance_modulus(distance_in_pc):
     return 5*log(distance_in_pc) - 5
+
+
+def gauss_mag(mean, sigma):
+    return gauss(mean, sigma)
 
 
 def mag_v(N1):
@@ -33,13 +38,13 @@ def log(number, base=10):
 
 def print_table(sky, per_line=6):
     BOLD, RESET  = '\033[1m', '\033[0m'
-    fmt_bold_if = lambda x,t:f'{BOLD}{x:<5.4g}{RESET}' if x<t else f'{x:<5.4g}'
+    bold_if = lambda x, t: f'{BOLD}{x:<5.4g}{RESET}' if x < t else f'{x:<5.4g}'
     header = f'{"Region":<6} {"n":>3} {"d(pc)":>7} '
     header+= f'{"μ":>7} {"10−μ":>7}  M_V (bold = visible)'
     print(f'{header}\n{"-"*len(header)}')
     for region in sky:
         limit = 10 - sky[region]['mu']
-        vals = [fmt_bold_if(m, limit) for m in sky[region]['M_V']]
+        vals = [bold_if(m, limit) for m in sky[region]['M_V']]
         chunks = [vals[i:i + per_line] for i in range(0, len(vals), per_line)]
         line1 = f'{region:<6} {sky[region]["n"]:>3} {int(sky[region]["d"]):>7}'
         line1+= f' {sky[region]["mu"]:>7.4g} {limit:>7.4g}  '
@@ -65,13 +70,14 @@ if __name__ == '__main__':
         'B': {'range': range( 90, 110)},
         'C': {'range': range(110, 130)}}
     
-    sky['B']['n'] = 30
+    sky['B']['n'] = 50
+    M_V_solar, sigma = 24/5, 3/10
     for region in sky:
         sky[region]['n'] = round(uniform_density(sky['B'], sky[region]))
         sky[region]['d'] = mean_distance(sky[region]['range'])
         sky[region]['mu'] = distance_modulus(sky[region]['d'])
         sky[region]['M_V'] = [
-            mag_v(randrange(1, 7)) for x in range(sky[region]['n'])]
+            gauss_mag(M_V_solar, sigma) for x in range(sky[region]['n'])]
         sky[region]['sample'] = [
             x for x in sky[region]['M_V'] if x < 10 - sky[region]['mu']]
     M_V_all = [mag for region in sky for mag in sky[region]['M_V']]
@@ -125,7 +131,6 @@ if __name__ == '__main__':
     print(f'\tΔM̄ = M̄_all − M̄_sample = {delta_M:.4g} mag')
     getpass('\nPress Enter to continue...\n')
 
-    print(f'part (g)')
     Z_all = [metallicity(y) for x in sky for y in sky[x]['N2']]
     Z_all = sum(Z_all)/len(Z_all)
     Z_BC_sample =[
@@ -133,9 +138,11 @@ if __name__ == '__main__':
         for x in ['B', 'C'] for y in range(len(sky[x]['N2']))
         if sky[x]['M_V'][y] in sky[x]['sample']]
     Z_BC_sample = sum(Z_BC_sample)/len(Z_BC_sample)
-    print(f'Z_all: {Z_all:.4g}')
-    print(f'Z_sample: {Z_BC_sample:.4g}')
     more_less = 'more' if Z_all < Z_BC_sample else 'less'
+
+    print(f'Part (g)')
+    print(f'\tZ_all: {Z_all:.4g}')
+    print(f'\tZ_sample: {Z_BC_sample:.4g}')
     print(
         f'The observed outer-region sample is {more_less}\nmetal-rich '
         f'than the overall population.')
